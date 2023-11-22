@@ -25,16 +25,17 @@ public class Incel2 implements Runnable {
     private final int RAM_SIZE = 64;
     private final int ROM_SIZE = 256;
     private final int STACK_SIZE = 5;
+    private final int BIT_COUNT = 8;
 
     //mem
-    private byte registers[] = new byte[REG_COUNT];
-    private boolean flags[] = new boolean[FLAG_COUNT];
-    private int portsI[] = new int[PORT_COUNT];
-    private int portsO[] = new int[PORT_COUNT];
-    private byte ram[] = new byte[RAM_SIZE];
-    private int prom[] = new int[ROM_SIZE];
+    private final int[] registers = new int[REG_COUNT];
+    private final boolean[] flags = new boolean[FLAG_COUNT];
+    private final int[] portsI = new int[PORT_COUNT];
+    private final int[] portsO = new int[PORT_COUNT];
+    private final int[] ram = new int[RAM_SIZE];
+    private final int[] prom = new int[ROM_SIZE];
     private int IP = 0;
-    private int callStack[] = new int[STACK_SIZE];
+    private final int[] callStack = new int[STACK_SIZE];
     private int SP = 0;
     private boolean running = false;
     private int exitCode = 0;
@@ -88,22 +89,44 @@ public class Incel2 implements Runnable {
         }
         switch(opcode){
             case NOOP:
-                System.out.println("NOOP");
                 break;
             case ADD:
-                System.out.println("ADD");
+                add:
+                registers[dst] = (registers[src1] + registers[src2]) % (int) Math.pow(2, BIT_COUNT);
+                if((registers[src1] + registers[src2]) > 255)
+                    flags[1] = true;
+                else
+                    flags[1] = false;
+                System.out.println("Add res: " + registers[dst]);
                 break;
             case SUB:
-                System.out.println("SUB");
+                registers[dst] = (registers[src1] - registers[src2]) % (int) Math.pow(2, BIT_COUNT);
+                System.out.println("SUB res: " + registers[dst]);
                 break;
             case AND:
-                System.out.println("AND");
+                registers[dst] = (registers[src1] & registers[src2] );
+                System.out.println("AND res: " + registers[dst]);
                 break;
             case OR:
                 System.out.println("OR");
                 break;
             case ADC:
-                System.out.println("ADC");
+                if(flags[1]){
+                    registers[dst] = (registers[src1] + registers[src2] + 1) % (int) Math.pow(2, BIT_COUNT);
+                    if((registers[src1] + registers[src2] + 1) > 255)
+                        flags[1] = true;
+                    else
+                        flags[1] = false;
+                }
+                else {
+                    registers[dst] = (registers[src1] + registers[src2]) % (int) Math.pow(2, BIT_COUNT);
+                    if ((registers[src1] + registers[src2]) > 255)
+                        flags[1] = true;
+                    else
+                        flags[1] = false;
+
+                }
+                System.out.println("Adc res: " + registers[dst]);
                 break;
             case RSH:
                 System.out.println("RCH");
@@ -136,9 +159,15 @@ public class Incel2 implements Runnable {
                 System.out.println("BRC");
                 break;
             case JMP:
-                System.out.println("JMP");
+                if(p == 1){
+                    IP = callStack[SP--];
+                    break;
+                }
+                IP = imm;
                 break;
             case JAL:
+                callStack[SP++] = ++IP;
+                IP = imm;
                 System.out.println("JAL");
                 break;
             case HLT:
@@ -146,6 +175,8 @@ public class Incel2 implements Runnable {
                 exitCode = 0;
                 halt();
                 break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + opcode);
         }
     }
 
