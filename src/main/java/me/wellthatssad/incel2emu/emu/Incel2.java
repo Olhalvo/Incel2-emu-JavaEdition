@@ -24,7 +24,7 @@ public class Incel2 implements Runnable {
     private final int PORT_COUNT = 7;
     private final int RAM_SIZE = 64;
     private final int ROM_SIZE = 256;
-    private final int STACK_SIZE = 5;
+    private final int STACK_SIZE = 10;
     private final int BIT_COUNT = 8;
     private final int RAM_INDEX_REG = 7;
 

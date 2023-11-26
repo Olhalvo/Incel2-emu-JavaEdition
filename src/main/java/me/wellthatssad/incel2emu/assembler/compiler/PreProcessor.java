@@ -1,24 +1,51 @@
 package me.wellthatssad.incel2emu.assembler.compiler;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Array;
+import java.util.*;
 
 public class PreProcessor {
-    private Map<String, Integer> labelmap = new HashMap<>();
+    private final Map<String, Integer> labelMap = new HashMap<>();
     private final String source;
 
     public PreProcessor(String src){
         source = src;
     }
 
-    public void getLabels(String[][] inst){
-
+    public List<String[]> getLabels(List<String[]> inst){
+        for(String[] line : inst){
+            if(line[0].startsWith("[")){
+                String label = line[0].replaceAll("\\[", "").replaceAll("]", "");
+                labelMap.put(label,inst.indexOf(line));
+                int index = inst.indexOf(line);
+                String[] newLine = new String[line.length -1];
+                for(int i = 1; i < line.length; i++){
+                    newLine[i-1] = line[i];
+                }
+                inst.set(index, newLine);
+            }
+        }
+        return inst;
     }
 
-    public String[][] PreProcess(){
+    public List<String[]> PreProcess(){
+        String[] temp = source.split("\n");
+        List<String[]> list = new ArrayList<>();
+        for(int i = 0; i < temp.length; i++){
+            temp[i] = temp[i].trim().replaceAll(" +", " ");
+            list.add(i, temp[i].split(" "));
+        }
+        list = getLabels(list);
+        for(int i = 0; i < list.size(); i++){
+            for(int j = 0; j < list.get(i).length; j++) {
+                String str = list.get(i)[j];
+                if (str.startsWith("$") && str.toCharArray()[1] == '[') {
+                    String label = str.replaceAll("\\$", "").replaceAll("\\[", "").replaceAll("]", "");
+                    list.get(i)[j] = "$" + labelMap.get(label).intValue();
+                }
+            }
+        }
 
-
-        return null;
+        return list;
     }
 
 }
