@@ -93,84 +93,102 @@ public class Incel2 implements Runnable {
             case NOOP:
                 break;
             case ADD:
+                System.out.println("ADD: " + registers[dst] + " " + registers[src1] + " " +  registers[src2]);
                 registers[dst] = (registers[src1] + registers[src2]) % (int) Math.pow(2, BIT_COUNT);
                 if((registers[src1] + registers[src2]) > 255)
-                    flags[1] = true;
+                    flags[2] = true;
                 else
-                    flags[1] = false;
+                    flags[2] = false;
                 updateFlags = true;
+                System.out.println("result: " + registers[dst]);
                 break;
             case SUB:
+                System.out.println("SUB: " + dst + " " + src1 + " " + src2);
                 registers[dst] = (registers[src1] - registers[src2]) % (int) Math.pow(2, BIT_COUNT);
                 updateFlags = true;
                 break;
             case AND:
+                System.out.println("AND: " + dst + " " + src1 + " " + src2);
                 registers[dst] = (registers[src1] & registers[src2] );
                 updateFlags = true;
                 break;
             case OR:
+                System.out.println("OR: " + dst + " " + src1 + " " + src2);
                 registers[dst] = (registers[src1] | registers[src2]);
                 updateFlags = true;
                 break;
             case ADC:
-                if(flags[1]){
+                System.out.println("ADC: " + dst + " " + src1 + " " + src2);
+                if(flags[2]){
                     registers[dst] = (registers[src1] + registers[src2] + 1) % (int) Math.pow(2, BIT_COUNT);
                     if((registers[src1] + registers[src2] + 1) > 255)
-                        flags[1] = true;
+                        flags[2] = true;
                     else
-                        flags[1] = false;
+                        flags[2] = false;
                 }
                 else {
                     registers[dst] = (registers[src1] + registers[src2]) % (int) Math.pow(2, BIT_COUNT);
                     if ((registers[src1] + registers[src2]) > 255)
-                        flags[1] = true;
+                        flags[2] = true;
                     else
-                        flags[1] = false;
+                        flags[2] = false;
 
                 }
                 updateFlags = true;
                 break;
             case RSH:
+                System.out.println("RSH: " + dst + " " + src1);
                 registers[dst] = registers[src1] >>1;
                 break;
             case ADI:
+                System.out.println("ADI: " + dst + " " + " " + imm);
                 int temp = registers[dst];
                 registers[dst] = (registers[dst] + imm) % (int) Math.pow(2, BIT_COUNT);
                 if(temp + imm > 255)
-                    flags[1] = true;
+                    flags[2] = true;
                 else
-                    flags[1] = false;
+                    flags[2] = false;
                 updateFlags = true;
                 break;
             case ANDI:
+                System.out.println("ANDI: " + dst + " " + " " + imm);
                 registers[dst] &= imm;
                 updateFlags = true;
                 break;
             case XORI:
+                System.out.println("XORI: " + dst + " " + " " + imm);
                 registers[dst] ^= imm;
                 updateFlags = true;
                 break;
             case LDI:
+                System.out.println("LDI: " + dst + " " + " " + imm);
                 registers[dst] = imm;
                 break;
             case MST:
-                ram[registers[RAM_INDEX_REG]] = registers[src1];
+                int setIndex = (registers[RAM_INDEX_REG] & 0b00111111);
+                System.out.println("MST: " + setIndex + " " + " " + src1);
+                ram[setIndex] = registers[src1];
                 break;
             case MLD:
-                registers[dst] = ram[registers[RAM_INDEX_REG]];
+                int loadIndex = (registers[RAM_INDEX_REG] & 0b00111111);
+                System.out.println("MST: " + dst + " " + " " + loadIndex);
+                registers[dst] = ram[loadIndex];
                 break;
             case PST:
-                //ILL do ports later :3
+                //I'll do ports later :3
                 break;
             case PLD:
-                //Ill do ports later :33
+                //I'll do ports later :33
                 break;
             case BRC:
+                System.out.println("BRC: " + flag + " " + v + " " + imm);
                 if(flags[flag] == v){
                     IP = imm;
                 }
                 break;
             case JMP:
+                System.out.println(Integer.toBinaryString(currInst));
+                System.out.println("JMP: " + p + " " + imm);
                 if(p){
                     IP = callStack[SP--];
                     break;
@@ -178,10 +196,12 @@ public class Incel2 implements Runnable {
                 IP = imm;
                 break;
             case JAL:
+                System.out.println("JAL: " + SP + " " + imm);
                 callStack[SP++] = ++IP;
                 IP = imm;
                 break;
             case HLT:
+                System.out.println("HLT: ");
                 exitCode = 0;
                 halt();
                 break;
@@ -190,9 +210,10 @@ public class Incel2 implements Runnable {
         }
         if(updateFlags){
             flags[0] = (registers[dst] > 127);
-            flags[2] = (registers[dst] == 0);
+            flags[1] = (registers[dst] == 0);
             flags[3] = ((registers[dst] % 2) == 1);
         }
+        registers[0] = 0;
     }
 
     public void start(){
@@ -205,11 +226,16 @@ public class Incel2 implements Runnable {
     }
     @Override
     public void run() {
+        int cycle = 0;
         while(running){
+            System.out.println("Cycle: " + cycle);
             fetch();
             decode();
             execute();
             displayRam();
+            cycle++;
+            System.out.println();
+
         }
     }
 

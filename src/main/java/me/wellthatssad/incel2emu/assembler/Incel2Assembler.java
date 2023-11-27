@@ -5,6 +5,7 @@ import me.wellthatssad.incel2emu.assembler.compiler.Parser;
 import me.wellthatssad.incel2emu.assembler.compiler.PreProcessor;
 import me.wellthatssad.incel2emu.assembler.data.AssemblerPhase;
 import me.wellthatssad.incel2emu.assembler.data.Token;
+import me.wellthatssad.incel2emu.assembler.exceptions.AssemblerException;
 import me.wellthatssad.incel2emu.utils.FileUtils;
 import me.wellthatssad.incel2emu.utils.InstBuffer;
 
@@ -35,13 +36,24 @@ public class Incel2Assembler implements Runnable{
                 throw new FileNotFoundException();
             phase = AssemblerPhase.PRE_PROCESSOR_;
             List<String[]> source = new PreProcessor(data).PreProcess();
+            if(Objects.isNull(source)){
+                throw new AssemblerException(phase);
+            }
             phase = AssemblerPhase.PARSER;
             List<Token> tokenList = new Parser(source).parse();
+            if(Objects.isNull(tokenList)){
+                throw new AssemblerException(phase);
+            }
             phase = AssemblerPhase.COMPILER;
             InstBuffer buff = new Compiler(tokenList).compile();
-            //FileUtils.writeBinaryFile(destination, buff);
+            if(Objects.isNull(buff)){
+                throw new AssemblerException(phase);
+            }
+            FileUtils.writeBinaryFile(destination, buff);
         } catch (FileNotFoundException e) {
             System.out.println("Incel2 Assembler has ran into an error: Could not open file \"" + fileSrc + "\"" );
+        } catch (AssemblerException e) {
+            System.err.println(e.getMessage() + " " + e.phase.toString());
         }
     }
 }

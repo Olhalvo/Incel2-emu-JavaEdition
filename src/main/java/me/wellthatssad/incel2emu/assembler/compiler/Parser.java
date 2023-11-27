@@ -67,9 +67,13 @@ public class Parser {
         for(String[] line : source){
             boolean ignore = false;
             for(String current: line){
+                if(current.length() == 0){
+                    break;
+                }
                 Token temp;
                 if(current.startsWith("//") || current.startsWith(">")){
-                    ignore = true;
+                    if(current.equalsIgnoreCase(line[0]))
+                            ignore = true;
                     break;
                 }
                 Operations op = getOperation(current);
@@ -135,15 +139,6 @@ public class Parser {
             }
             if(!ignore)
                 lineNum++;
-        }
-        for(int i = 1; i <= lineNum; i++){
-            final int lineCheck = i;
-            List<Token> line = tokenList.stream().filter(token -> {return token.line() == lineCheck ? true:false;}).collect(Collectors.toList());
-            System.out.print("line " + i + ":");
-            for(Token tok : line){
-                System.out.print(tok.toString() + " ");
-            }
-            System.out.print('\n');
         }
         return tokenList;
     }

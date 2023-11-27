@@ -12,17 +12,20 @@ public class PreProcessor {
     }
 
     public List<String[]> getLabels(List<String[]> inst){
+        int lineIndex = 0;
         for(String[] line : inst){
+            if(line[0].startsWith("//") && line[0].startsWith(">"))
+                break;
             if(line[0].startsWith("[")){
                 String label = line[0].replaceAll("\\[", "").replaceAll("]", "");
                 labelMap.put(label,inst.indexOf(line));
-                int index = inst.indexOf(line);
                 String[] newLine = new String[line.length -1];
                 for(int i = 1; i < line.length; i++){
                     newLine[i-1] = line[i];
                 }
-                inst.set(index, newLine);
+                inst.set(lineIndex, newLine);
             }
+            lineIndex++;
         }
         return inst;
     }
@@ -40,6 +43,9 @@ public class PreProcessor {
                 String str = list.get(i)[j];
                 if (str.startsWith("$") && str.toCharArray()[1] == '[') {
                     String label = str.replaceAll("\\$", "").replaceAll("\\[", "").replaceAll("]", "");
+                    if(!(labelMap.containsKey(label))){
+                        System.err.println("invalid label: " + label);
+                    }
                     list.get(i)[j] = "$" + labelMap.get(label).intValue();
                 }
             }
