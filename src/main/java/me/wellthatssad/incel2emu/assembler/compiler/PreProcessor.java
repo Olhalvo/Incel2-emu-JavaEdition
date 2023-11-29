@@ -13,21 +13,27 @@ public class PreProcessor {
 
     public List<String[]> getLabels(List<String[]> inst){
         int lineIndex = 0;
-        for(String[] line : inst){
-            if(line[0].startsWith("//") && line[0].startsWith(">"))
-                break;
-            if(line[0].startsWith("[")){
-                String label = line[0].replaceAll("\\[", "").replaceAll("]", "");
-                labelMap.put(label,inst.indexOf(line));
-                String[] newLine = new String[line.length -1];
-                for(int i = 1; i < line.length; i++){
-                    newLine[i-1] = line[i];
-                }
-                inst.set(lineIndex, newLine);
+        List<String[]> finishedList = new ArrayList<>();
+        for(String[] line : inst) {
+            if (line[0].isBlank()) {
+                continue;
             }
+            if (line[0].startsWith("//") || line[0].startsWith(">"))
+                continue;
+            if (line[0].startsWith("[")) {
+                String label = line[0].replaceAll("\\[", "").replaceAll("]", "");
+                labelMap.put(label, lineIndex);
+                String[] newLine = new String[line.length - 1];
+                for (int i = 1; i < line.length; i++) {
+                    newLine[i - 1] = line[i];
+                }
+                finishedList.add(lineIndex, newLine);
+            }
+            else
+                finishedList.add(lineIndex, line);
             lineIndex++;
         }
-        return inst;
+        return finishedList;
     }
 
     public List<String[]> PreProcess(){
@@ -42,15 +48,18 @@ public class PreProcessor {
             for(int j = 0; j < list.get(i).length; j++) {
                 String str = list.get(i)[j];
                 if (str.startsWith("$") && str.toCharArray()[1] == '[') {
-                    String label = str.replaceAll("\\$", "").replaceAll("\\[", "").replaceAll("]", "");
+                    String label = str.replace("$", "").replace("[", "").replace("]", "");
                     if(!(labelMap.containsKey(label))){
                         System.err.println("invalid label: " + label);
+                        continue;
                     }
-                    list.get(i)[j] = "$" + labelMap.get(label).intValue();
+                    list.get(i)[j] = "$" + labelMap.get(label);
                 }
             }
         }
-
+        for(String[] arr : list){
+            System.out.println(Arrays.toString(arr));
+        }
         return list;
     }
 

@@ -151,9 +151,6 @@ public class Compiler {
             System.err.println(e.getMessage());
             return null;
         }
-        for(int i : buffer.buff){
-            System.out.println(i);
-        }
         return buffer;
     }
 
