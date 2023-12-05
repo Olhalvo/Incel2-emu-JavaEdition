@@ -1,10 +1,15 @@
 package me.wellthatssad.incel2emu.emu;
 
 
+import me.wellthatssad.incel2emu.emu.component.PortComponent;
+import me.wellthatssad.incel2emu.emu.component.components.RandomNumGen;
+import me.wellthatssad.incel2emu.emu.component.components.Stdin;
+import me.wellthatssad.incel2emu.emu.component.components.Stdout;
 import me.wellthatssad.incel2emu.utils.InstBuffer;
 import me.wellthatssad.incel2emu.utils.OpcodeConverter;
 import me.wellthatssad.incel2emu.utils.Operations;
 
+import java.util.Arrays;
 import java.util.Stack;
 
 public class Incel2 implements Runnable {
@@ -31,8 +36,8 @@ public class Incel2 implements Runnable {
     //mem
     private final int[] registers = new int[REG_COUNT];
     private final boolean[] flags = new boolean[FLAG_COUNT];
-    private final int[] portsI = new int[PORT_COUNT];
-    private final int[] portsO = new int[PORT_COUNT];
+    private final PortComponent[] portsI = new PortComponent[PORT_COUNT];
+    private final PortComponent[] portsO = new PortComponent[PORT_COUNT];
     private final int[] ram = new int[RAM_SIZE];
     private final int[] prom = new int[ROM_SIZE];
     private int IP = 0;
@@ -52,7 +57,23 @@ public class Incel2 implements Runnable {
     private boolean p;
 
     public Incel2(){
+        portsI[0] = new RandomNumGen((int) System.currentTimeMillis());
+        portsI[1] = new Stdin();
+        portsO[0] = new Stdout();
         IP = 0;
+    }
+
+    public void addComponent(PortComponent component, int port){
+        if(port > PORT_COUNT){
+            System.out.println("Port number exceeds the maximum port index");
+            return;
+        }
+        if(component.isInput()){
+            portsI[port] = component;
+        }
+        else {
+            portsO[port] = component;
+        }
     }
 
     private void fetch(){
@@ -68,19 +89,18 @@ public class Incel2 implements Runnable {
         if(!running){
             return;
         }
-            opcode = OpcodeConverter.convert((currInst & OPCODE_MASK) >> 11);
-            dst = ((currInst & DEST_MASK) >> 8);
-            src1 = ((currInst & SRC1_MASK) >> 3);
-            src2 = ((currInst & SRC2_MASK));
-            flag = ((currInst & FLAG_MASK) >> 9);
-            imm = ((currInst & IMM_MASK));
-            v =  (((currInst & V_MASK) >> 8) >= 1);
-            p = (((currInst & P_MASK) >> 10) >= 1);
-            if(opcode == null){
-                exitCode = -1;
-                halt();
-            }
-
+        opcode = OpcodeConverter.convert((currInst & OPCODE_MASK) >> 11);
+        dst = ((currInst & DEST_MASK) >> 8);
+        src1 = ((currInst & SRC1_MASK) >> 3);
+        src2 = ((currInst & SRC2_MASK));
+        flag = ((currInst & FLAG_MASK) >> 9);
+        imm = ((currInst & IMM_MASK));
+        v =  (((currInst & V_MASK) >> 8) >= 1);
+        p = (((currInst & P_MASK) >> 10) >= 1);
+        if(opcode == null){
+            exitCode = -1;
+            halt();
+        }
     }
 
     private void execute(){
@@ -94,16 +114,14 @@ public class Incel2 implements Runnable {
             case ADD:
                 System.out.println("ADD: " + registers[dst] + " " + registers[src1] + " " +  registers[src2]);
                 registers[dst] = (registers[src1] + registers[src2]) % (int) Math.pow(2, BIT_COUNT);
-                if((registers[src1] + registers[src2]) > 255)
-                    flags[2] = true;
-                else
-                    flags[2] = false;
+                flags[2] = (registers[src1] + registers[src2]) > 255;
                 updateFlags = true;
                 System.out.println("result: " + registers[dst]);
                 break;
             case SUB:
                 System.out.println("SUB: " + dst + " " + src1 + " " + src2);
                 registers[dst] = (registers[src1] - registers[src2]) % (int) Math.pow(2, BIT_COUNT);
+                flags[2] = (registers[src1] - registers[src2]) >= 0;
                 updateFlags = true;
                 break;
             case AND:
@@ -162,14 +180,14 @@ public class Incel2 implements Runnable {
                 break;
             case MLD:
                 int loadIndex = (registers[RAM_INDEX_REG] & 0b00111111);
-                System.out.println("MST: " + dst + " " + loadIndex);
+                System.out.println("MLD: " + dst + " " + loadIndex);
                 registers[dst] = ram[loadIndex];
                 break;
             case PST:
-                //I'll do ports later :3
+
                 break;
             case PLD:
-                //I'll do ports later :33
+
                 break;
             case BRC:
                 System.out.println("BRC: " + flag + " " + v + " " + imm);
@@ -223,10 +241,11 @@ public class Incel2 implements Runnable {
             fetch();
             decode();
             execute();
+            System.out.println(Arrays.toString(flags));
+            System.out.println(Arrays.toString(registers));
             displayRam();
             cycle++;
             System.out.println();
-
         }
     }
 
